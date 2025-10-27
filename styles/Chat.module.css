@@ -1,0 +1,95 @@
+
+.pageContainer {
+  display: flex;
+  height: 100vh;
+}
+
+.chatContainer {
+  display: flex;
+  flex-direction: column;
+  width: 50%;
+  background-color: #f9f9f9;
+  border-right: 1px solid #e0e0e0;
+}
+
+.panelContainer {
+  width: 50%;
+  padding: 1.5rem;
+  background-color: #fff;
+}
+
+.chatHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #fff;
+}
+
+.chatTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.resetButton {
+  background-color: #f0f0f0;
+  border: 1px solid #dcdcdc;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.chatHistory {
+  flex-grow: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.message {
+  padding: 0.75rem 1rem;
+  border-radius: 15px;
+  margin-bottom: 1rem;
+  max-width: 80%;
+  word-wrap: break-word;
+}
+
+.userMessage {
+  background-color: #007bff;
+  color: white;
+  align-self: flex-end;
+  border-bottom-right-radius: 0;
+}
+
+.agentMessage {
+  background-color: #e9ecef;
+  color: #333;
+  align-self: flex-start;
+  border-bottom-left-radius: 0;
+}
+
+.inputArea {
+  display: flex;
+  padding: 1.5rem;
+  border-top: 1px solid #e0e0e0;
+  background-color: #fff;
+}
+
+.inputField {
+  flex-grow: 1;
+  border: 1px solid #ced4da;
+  border-radius: 20px;
+  padding: 0.75rem 1rem;
+  margin-right: 1rem;
+}
+
+.sendButton {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+}

@@ -11,7 +11,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         </Col>
       </Row>
       <Row>
-        <Col as="main" className="ms-sm-auto px-md-4">
+        <Col as="main" className="ms-sm-auto px-md-4 py-4">
           {children}
         </Col>
       </Row>
