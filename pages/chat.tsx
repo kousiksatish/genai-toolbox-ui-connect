@@ -1,6 +1,17 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import styles from '../styles/Chat.module.css';
+import WidgetCard from '../components/WidgetCard';
+import Table from '../components/Table';
+
+const componentMap: { [key: string]: React.ComponentType<any> } = {
+  'execute_sql': Table,
+  'list_invalid_indexes': Table,
+  'list_top_bloated_tables': Table,
+  'list_autovacuum_configurations': Table,
+  'list_replication_slots': Table,
+  'list_memory_configurations': Table,
+};
 
 const FormattedText = ({ text }: { text: string }) => {
   const formattedText = text
@@ -13,7 +24,9 @@ const ChatPage = () => {
   const [message, setMessage] = useState('');
   const [chatHistory, setChatHistory] = useState<{ user: string; text: string }[]>([]);
   const [streamingResponse, setStreamingResponse] = useState('');
+  const [widgets, setWidgets] = useState<{ id: number; componentKey: string; data?: any; isLoading: boolean; toolCallId?: string }[]>([]);
   const chatHistoryRef = useRef<HTMLDivElement>(null);
+  const toolCallIdCounter = useRef(0);
 
   const initialMessage = {
     user: 'Agent',
@@ -21,7 +34,7 @@ const ChatPage = () => {
   };
 
   const APP_NAME = "genui-app";
-  const SESSION_ID = "ffdbe978-5a02-4fed-a0f0-054ec13a63e5";
+  const SESSION_ID = "ffdbe978-5a02-4fed-a0f0-054ec13a6555";
   const USER_ID = "user";
 
   useEffect(() => {
@@ -51,13 +64,30 @@ const ChatPage = () => {
     }
   }, [chatHistory, streamingResponse]);
 
-  const processParts = (part: any): string => {
+  const processParts = (part: any, isPartial: boolean): string | undefined => {
     if (part.text) {
-      return part.text;
+      return isPartial ? part.text : undefined;
     } else if (part.functionCall) {
-      return `\n\`\`\Tool ${part.functionCall.name} executing with arguments: ${JSON.stringify(part.functionCall.args)}.\n\`\`\`\n`;
+      const newToolCallId = `${part.functionCall.name}-${toolCallIdCounter.current++}`;
+      addWidget(part.functionCall.name, undefined, true, newToolCallId);
+      return undefined; // `\n\`\`\Tool ${part.functionCall.name} executing with arguments: ${JSON.stringify(part.functionCall.args)}.\n\`\`\`\n`;
     } else if (part.functionResponse) {
-      return `\n\`\`\`Tool response: ${JSON.stringify(part.functionResponse.response)}.\n\`\`\`\n`;
+      setWidgets(prevWidgets => {
+        const widgetIndex = prevWidgets.findIndex(w => w.componentKey === part.functionResponse.name && w.isLoading);
+        if (widgetIndex > -1) {
+          const updatedWidgets = [...prevWidgets];
+          try {
+            const responseData = part.functionResponse.response;
+            updatedWidgets[widgetIndex] = { ...updatedWidgets[widgetIndex], data: JSON.parse(responseData.result), isLoading: false };
+          } catch (e) {
+            console.error('Failed to parse tool response', e);
+            updatedWidgets[widgetIndex] = { ...updatedWidgets[widgetIndex], data: { error: 'Failed to parse response' }, isLoading: false };
+          }
+          return updatedWidgets;
+        }
+        return prevWidgets;
+      });
+      return undefined; // `\n\`\`\Tool response: ${JSON.stringify(part.functionResponse.response)}.\n\`\`\`\n`;
     }
     return '';
   }
@@ -106,9 +136,7 @@ const ChatPage = () => {
             try {
               const json = JSON.parse(line.substring(5));
               if (json.content) {
-                // if (!json.partial) continue;
-
-                agentResponse += json.content.parts.map((part: any) => processParts(part)).join(' ');
+                agentResponse += json.content.parts.map((part: any) => processParts(part, json.partial)).join(' ');
                 setStreamingResponse(agentResponse);
               }
             } catch (e) {
@@ -130,6 +158,21 @@ const ChatPage = () => {
 
   const handleReset = () => {
     setChatHistory([initialMessage]);
+  };
+
+  const addWidget = (componentKey: string, data?: any, isLoading = false, toolCallId?: string) => {
+    const newWidget = {
+      id: Date.now(),
+      componentKey,
+      data,
+      isLoading,
+      toolCallId,
+    };
+    setWidgets(prevWidgets => [...prevWidgets, newWidget]);
+  };
+
+  const removeWidget = (id: number) => {
+    setWidgets(prevWidgets => prevWidgets.filter(widget => widget.id !== id));
   };
 
   return (
@@ -173,7 +216,14 @@ const ChatPage = () => {
         </div>
       </div>
       <div className={styles.panelContainer}>
-        {/* Panel content goes here */}
+        {widgets.map(widget => {
+          const Component = componentMap[widget.componentKey];
+          return (
+            <WidgetCard key={widget.id} onClose={() => removeWidget(widget.id)} isLoading={widget.isLoading}>
+              {Component ? <Component data={widget.data} /> : <p>Unknown component</p>}
+            </WidgetCard>
+          );
+        })}
       </div>
     </div>
   );
